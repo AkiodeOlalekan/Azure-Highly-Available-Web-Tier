@@ -1,5 +1,6 @@
 
 ########## create bastion public ip ##############
+
 resource "azurerm_public_ip" "AhmedBastionPublicIP" {
   name                = "AhmedBastionPublicIP"
   location            = azurerm_resource_group.AhmedRG.location
@@ -9,6 +10,7 @@ resource "azurerm_public_ip" "AhmedBastionPublicIP" {
 }
 
 ############ create bastion host ##############
+
 resource "azurerm_bastion_host" "AhmedBastionHost" {
   name                = "AhmedBastionHost"
   location            = azurerm_resource_group.AhmedRG.location

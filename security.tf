@@ -1,6 +1,7 @@
 ############# create a network security group ##############
+
 resource "azurerm_network_security_group" "VmNSG" {
-  name                = "VMNSG"
+  name                = var.network_security_group_name
   location            = azurerm_resource_group.AhmedRG.location
   resource_group_name = azurerm_resource_group.AhmedRG.name
 
@@ -36,6 +37,7 @@ resource "azurerm_network_security_group" "VmNSG" {
 
 
 ############# associate the network security group with the subnet ##############
+
 resource "azurerm_subnet_network_security_group_association" "VMSubnetNSGAssociation" {
   subnet_id                 = azurerm_subnet.VMSubnet.id
   network_security_group_id = azurerm_network_security_group.VmNSG.id

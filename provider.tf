@@ -1,3 +1,5 @@
+############ terraform provider configuration ##############
+
 terraform {
   required_providers {
     azurerm = {
@@ -9,7 +11,8 @@ terraform {
 
 
 
-# Configure the Microsoft Azure Provider
+############# Configure the Microsoft Azure Provider ###############
+
 provider "azurerm" {
 subscription_id = var.subscription_id
   features {}
