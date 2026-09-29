@@ -71,7 +71,3 @@ The fix was an explicit `azurerm_lb_outbound_rule`, pointed at the same frontend
 - VM admin credentials are Terraform variables; not yet pulled from Key Vault
 - State is local; not yet moved to a remote backend
 - No CI/CD — `plan`/`apply` are run manually
-
-## Lessons learned
-
-[Add 2-3 sentences in your own words — what surprised you, what you'd do differently next time.]
