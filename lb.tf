@@ -1,0 +1,66 @@
+############## create a load balancer ##############
+
+resource "azurerm_public_ip" "ahmed_lb_public_ip" {
+  name                = "PublicIPForLB"
+  location            = azurerm_resource_group.AhmedRG.location
+  resource_group_name = azurerm_resource_group.AhmedRG.name
+  allocation_method   = "Static"
+  zones               = ["1", "2", "3"]
+}
+
+resource "azurerm_lb" "ahmed_lb" {
+  name                = "TestLoadBalancer"
+  location            = azurerm_resource_group.AhmedRG.location
+  resource_group_name = azurerm_resource_group.AhmedRG.name
+  sku                 = "Standard"
+
+  frontend_ip_configuration {
+    name                 = "PublicIPAddress"
+    public_ip_address_id = azurerm_public_ip.ahmed_lb_public_ip.id
+  }
+}
+
+resource "azurerm_lb_backend_address_pool" "ahmed_lb_backend_pool" {
+  loadbalancer_id = azurerm_lb.ahmed_lb.id
+  name            = "BackEndAddressPool"
+}
+
+resource "azurerm_network_interface_backend_address_pool_association" "ahmed_nic_backend_pool_association" {
+  count                   = var.resource_count
+  network_interface_id    = azurerm_network_interface.WindowsNIC[count.index].id
+  ip_configuration_name   = "internal"
+  backend_address_pool_id = azurerm_lb_backend_address_pool.ahmed_lb_backend_pool.id
+
+}
+
+resource "azurerm_lb_probe" "ahmed_lb_probe" {
+  loadbalancer_id = azurerm_lb.ahmed_lb.id
+  name            = "HealthProbe"
+  protocol        = "Tcp"
+  port            = 80
+}
+
+
+resource "azurerm_lb_rule" "ahmed_lb_rule" {
+  loadbalancer_id                = azurerm_lb.ahmed_lb.id
+  name                           = "LBRule"
+  protocol                       = "Tcp"
+  frontend_port                  = 80
+  backend_port                   = 80
+  frontend_ip_configuration_name = "PublicIPAddress"
+  backend_address_pool_ids       = [azurerm_lb_backend_address_pool.ahmed_lb_backend_pool.id]
+  probe_id                       = azurerm_lb_probe.ahmed_lb_probe.id
+  disable_outbound_snat          = true
+}
+
+
+resource "azurerm_lb_outbound_rule" "ahmed_lb_outbound" {
+  name                    = "OutboundRule"
+  loadbalancer_id         = azurerm_lb.ahmed_lb.id
+  protocol                = "All"
+  backend_address_pool_id = azurerm_lb_backend_address_pool.ahmed_lb_backend_pool.id
+
+  frontend_ip_configuration {
+    name = "PublicIPAddress"
+  }
+}

@@ -1,0 +1,77 @@
+# Azure Highly Available Web Tier
+
+A highly available web tier on Azure, built with Terraform: three IIS web servers spread across availability zones, sitting behind a zone-redundant load balancer, with no public RDP surface — all admin access goes through Azure Bastion.
+
+## Architecture
+
+![Architecture](web_archi_diagram.png)
+
+- **Internet** reaches the environment through two public IPs: one for the load balancer, one for Bastion.
+- **Load balancer** (Standard SKU, zone-redundant frontend) receives HTTP on port 80 and forwards it to the VM backend pool. A health probe on port 80 keeps traffic off any VM that stops responding.
+- **VM subnet** (`10.0.1.0/24`) holds three Windows Server 2019 VMs running IIS, one in each availability zone (1, 2, 3). None of them has a public IP.
+- **Bastion subnet** (`10.0.2.0/24`) holds the Bastion host, which connects to the VMs over their private IPs. This is the only path in for RDP.
+- **NSG** on the VM subnet allows inbound HTTP from the internet and outbound internet access; nothing else is open.
+
+## Prerequisites
+
+- An Azure subscription
+- Terraform >= 1.x
+- Azure CLI, logged in (`az login`)
+
+## Deployment
+
+```bash
+git clone <repo-url>
+cd <repo-folder>
+cp terraform.tfvars.example terraform.tfvars   # fill in your own values
+terraform init
+terraform plan
+terraform apply
+```
+
+Once it finishes:
+
+```bash
+terraform output website_url
+```
+
+Open that URL in a private/incognito window. Refresh a few times — the load balancer may keep sending you to the same VM, so use separate incognito sessions to see the others answer.
+
+## Teardown
+
+```bash
+terraform destroy
+```
+
+VMs, the load balancer, and Bastion all bill while running — destroy the stack when you're done testing.
+
+## Design decisions
+
+- **Bastion instead of public RDP.** The VMs have no public IP. Admin access goes through Bastion, which connects over the VMs' private IPs.
+- **HTTP only, no HTTPS.** IIS is serving plain HTTP for this lab. Adding HTTPS would mean a certificate and a binding on each VM — worthwhile for a real deployment, left out here to keep the config focused. Noted as future work below.
+- **Load balancer outbound rule instead of a NAT Gateway.** Both give a subnet outbound internet access. A NAT Gateway is the more common pattern for larger workloads, but it's tied to a single zone (or none), which would work against the zone-redundant design here. The load balancer's outbound rule, on a zone-redundant frontend, keeps outbound access consistent with the rest of the architecture.
+- **VMs spread across availability zones.** Each VM sits in a different zone (1, 2, 3), and the load balancer's public IP is zone-redundant, so the site stays reachable if one zone goes down.
+
+## The outbound access issue
+
+The IIS install script failed on every VM with the same error:
+Install-WindowsFeature : The request to add or remove features on the specified server failed.
+Error: 0x80072ee2
+
+
+That error means Windows couldn't reach the internet to pull the IIS installation payload. Ping to the VM's public-facing address worked, but `Test-NetConnection` to Windows Update endpoints timed out on every port — DNS resolved, but nothing connected.
+
+The cause: this load balancer is Standard SKU, and Standard SKU doesn't provide the automatic outbound internet access that Basic SKU gives for free. The VMs were in the backend pool for an inbound rule only, with no outbound rule configured — so they had no path out at all.
+
+The fix was an explicit `azurerm_lb_outbound_rule`, pointed at the same frontend IP and backend pool. Azure then required the existing inbound rule to set `disable_outbound_snat = true`, since a frontend IP can't provide both automatic and rule-based SNAT for the same backend pool at once. Once both were in place, the VMs had a route out, and the IIS install succeeded.
+
+## Known limitations / future work
+
+- HTTP only — no TLS termination
+- VM admin credentials are Terraform variables; not yet pulled from Key Vault
+- State is local; not yet moved to a remote backend
+- No CI/CD — `plan`/`apply` are run manually
+
+## Lessons learned
+
+[Add 2-3 sentences in your own words — what surprised you, what you'd do differently next time.]
