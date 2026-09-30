@@ -63,7 +63,6 @@ variable "windows_vm_name" {
 variable "windows_vm_admin_username" {
   description = "The admin username for the Windows virtual machine"
   type        = string
-  default     = "AhmedAdmin"
 }
 
 variable "windows_vm_admin_password" {
@@ -99,4 +98,40 @@ variable "LB_public_ip_name" {
   description = "The name of the public IP address for the load balancer"
   type        = string
   default     = "LB-PublicIP"
+}
+
+
+variable "log_analytics_workspace_name" {
+  description = "The name of the Log Analytics workspace"
+  type        = string
+  default     = "AhmedLogAnalytics"
+}
+
+variable "diagnostic_setting_name" {
+  description = "The name of the diagnostic setting"
+  type        = string
+  default     = "LBdiagnosticSetting"
+}
+
+variable "action_group_name" {
+  description = "The name of the action group"
+  type        = string
+  default     = "AhmedActionGroup"
+}
+
+variable "email_receiver_name" {
+  description = "The name of the email receiver for alerts"
+  type        = string
+  default     = "AhmedEmailReceiver"
+}
+
+variable "metric_alert_name" {
+  description = "The name of the metric alert"
+  type        = string
+  default     = "HealthProbeMetricAlert"
+}
+
+variable "email_address_for_alerts" {
+  description = "The email address for receiving alerts"
+  type        = string  
 }

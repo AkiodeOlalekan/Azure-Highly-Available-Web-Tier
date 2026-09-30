@@ -1,6 +1,6 @@
-###### Examples of what should be expected for each ##############
-
+###### Examples of what should be expected for each #############
 
 windows_vm_admin_username = "UserAdmin"
 windows_vm_admin_password = "UserAdmin123!"
 subscription_id = "c46289545-c5895-3506-67ha-3828c214e2b"
+email_address_for_alerts = "useradmin@gmail.com"
